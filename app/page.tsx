@@ -1,95 +1,105 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+// import Image from "next/image";
+// import styles from "./page.module.css";
+import { useState } from "react";
 
-export default function Home() {
+export default function Game() {
+  const [xIsNext, setXIsNext] = useState(true);
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  const [currentMove, setCurrentMove] = useState(0);
+  const currentSquares = history[currentMove];
+  function handlePlay(nextSquares: (number | null)[]) {
+    let nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    setHistory(nextHistory);
+    setCurrentMove(nextHistory.length - 1);
+    setXIsNext(!xIsNext);
+  }
+  function jumpTo(nextMove: any) {
+    setCurrentMove(nextMove);
+    setXIsNext(nextMove % 2 === 0);
+  }
+  const moves = history.map((squares: (number | null)[], move: number) => {
+    let text = move > 0 ? `Go to move #${move}` : "Got to game start";
+    return (
+      <div className="item" onClick={() => jumpTo(move)} key={move}>
+        {text}
+      </div>
+    );
+  });
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+    <main>
+      <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+      <div className="history">{moves}</div>
     </main>
   );
+}
+
+function Board({ xIsNext, squares, onPlay }: any) {
+  function handleClick(i: number) {
+    if (squares[i] || calcWinner(squares)) {
+      return;
+    }
+    const newSquares = squares.slice();
+    if (xIsNext) {
+      newSquares[i] = "X";
+    } else {
+      newSquares[i] = "O";
+    }
+    onPlay(newSquares);
+  }
+  const winner = calcWinner(squares);
+  let status: string;
+  if (winner) {
+    status = `winner: ${winner}`;
+  } else {
+    status = `Next Player: ${xIsNext ? "X" : "O"}`;
+  }
+  return (
+    <div className="game-board">
+      <div className="status">{status}</div>
+      <div className="row">
+        <Square value={squares[0]} onClick={() => handleClick(0)} />
+        <Square value={squares[1]} onClick={() => handleClick(1)} />
+        <Square value={squares[2]} onClick={() => handleClick(2)} />
+      </div>
+      <div className="row">
+        <Square value={squares[3]} onClick={() => handleClick(3)} />
+        <Square value={squares[4]} onClick={() => handleClick(4)} />
+        <Square value={squares[5]} onClick={() => handleClick(5)} />
+      </div>
+      <div className="row">
+        <Square value={squares[6]} onClick={() => handleClick(6)} />
+        <Square value={squares[7]} onClick={() => handleClick(7)} />
+        <Square value={squares[8]} onClick={() => handleClick(8)} />
+      </div>
+    </div>
+  );
+}
+
+function Square({ value, onClick }: any) {
+  return (
+    <button className="square" onClick={onClick}>
+      {value}
+    </button>
+  );
+}
+
+function calcWinner(squares: number[]): number | null {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
 }
